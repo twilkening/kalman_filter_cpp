@@ -363,5 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # MATLAB extraneous files
-.asv
-.csv
+*.asv
+*.csv
