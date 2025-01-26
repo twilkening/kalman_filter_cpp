@@ -9,8 +9,11 @@ file.
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cmath>
+#include <numbers>
 #include <Eigen/Dense>
 #include <Eigen/Core>
+#include <unsupported/Eigen/MatrixFunctions>
 
 //#include "kalmanfilter.h"
 
@@ -55,7 +58,7 @@ void writeData(MatrixXd data, string filename) {
 }
 
 // Function to implement the Kalman Filter algorithm
-MatrixXd kalmanFilter(MatrixXd data, MatrixXd A, MatrixXd B, MatrixXd H, MatrixXd Q, MatrixXd R, MatrixXd P) {
+MatrixXd kalmanFilter(MatrixXd data, MatrixXd A, MatrixXd H, MatrixXd Q, MatrixXd R, MatrixXd P) {
 	MatrixXd x(data.rows(), data.cols());
 	MatrixXd I = MatrixXd::Identity(A.rows(), A.cols());
 	for (int i = 0; i < data.rows(); i++) {
@@ -75,19 +78,30 @@ MatrixXd kalmanFilter(MatrixXd data, MatrixXd A, MatrixXd B, MatrixXd H, MatrixX
 
 int main() {
 	MatrixXd data = readData("data.csv");
-	MatrixXd A(1, 1);
-	A << 1;
-	MatrixXd B(1, 1);
-	B << 0;
-	MatrixXd H(1, 1);
-	H << 1;
-	MatrixXd Q(1, 1);
-	Q << 0.1;
-	MatrixXd R(1, 1);
-	R << 0.1;
-	MatrixXd P(1, 1);
-	P << 0.1;
-	MatrixXd filtered_data = kalmanFilter(data, A, B, H, Q, R, P);
+	//To do: update the initialization matrices A, H, Q, R, P
+	double g, l, m1, m2, a, qf, T, sigma;
+	g = 9.81; // m/s^2
+	l = 1; // m
+	m1 = 1; // kg
+	m2 = 2; // kg
+	a = 3 * g * (m1 / 2 + m2) / (l * (m1 + 3 * m2));
+	qf = 3 / (pow(l,2) * (m1 + 3 * m2));
+	T = 0.01; // s
+	constexpr double PI = 3.14159265358979323846;
+    sigma = PI / 18.0 / 5.0;
+	MatrixXd A(2, 2);
+	A << 0, 1, a, 0;
+	MatrixXd F(2, 2);
+	F << A.exp();
+	MatrixXd H(1, 2);
+	H << 1, 0;
+	MatrixXd Q(2, 2);
+	Q << 0.000006121163394e-3, 0.000918045963364e-3, 0.000918045963364e-3, 0.183609197172119e-3;
+	MatrixXd R(2, 2);
+	R << sigma, 0, 0, sigma;
+	MatrixXd P(2, 2);
+	P << 0.5, 0, 0, 0.5;
+	MatrixXd filtered_data = kalmanFilter(data, A, H, Q, R, P);
 	writeData(filtered_data, "filtered_data.csv");
 	return 0;
 }
