@@ -10,7 +10,6 @@ file.
 #include <string>
 #include <sstream>
 #include <cmath>
-#include <numbers>
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <unsupported/Eigen/MatrixFunctions>
@@ -58,33 +57,41 @@ void writeData(MatrixXd data, string filename) {
 }
 
 // Function to implement the Kalman Filter algorithm
-MatrixXd kalmanFilter(MatrixXd data, MatrixXd A, MatrixXd H, MatrixXd Q, MatrixXd R, MatrixXd P) {
+MatrixXd kalmanFilter(MatrixXd data, MatrixXd xinit, MatrixXd A, MatrixXd H, MatrixXd Q, MatrixXd R, MatrixXd P) {
 	MatrixXd x(data.rows(), data.cols());
 	MatrixXd I = MatrixXd::Identity(A.rows(), A.cols());
 	for (int i = 0; i < data.rows(); i++) {
 		if (i == 0) {
-			x.row(i) = data.row(i);
+			x.row(i) = xinit;
 		}
 		else {
+			//cout << "A: " << A << endl;
+			//cout << "x.row(i - 1).transpose(): " << x.row(i - 1).transpose() << endl;
 			MatrixXd x_pred = A * x.row(i - 1).transpose();
+			//cout << "x_pred: " << x_pred << endl;
 			MatrixXd P_pred = A * P * A.transpose() + Q;
+			//cout << "P_pred: " << P_pred << endl;
 			MatrixXd K = P_pred * H.transpose() * (H * P_pred * H.transpose() + R).inverse();
-			x.row(i) = (x_pred + K * (data.row(i) - H * x_pred)).transpose();
+			//cout << "K: " << K << endl;
+			x.row(i) = (x_pred + K * (data.row(i).col(0) - H * x_pred)).transpose();
+			//cout << "x.row(i): " << x.row(i) << endl;
 			P = (I - K * H) * P_pred;
+			//cout << "P: " << P << endl;
 		}
 	}
 	return x;
 }
 
 int main() {
-	MatrixXd data = readData("data.csv");
-	//To do: update the initialization matrices A, H, Q, R, P
+	MatrixXd data = readData("theta_dtheta_rand.csv");
+	MatrixXd xinit(1, 2);
+	xinit << 0.15960189, -0.04277428;
 	double g, l, m1, m2, a, qf, T, sigma;
 	g = 9.81; // m/s^2
 	l = 1; // m
 	m1 = 1; // kg
 	m2 = 2; // kg
-	a = 3 * g * (m1 / 2 + m2) / (l * (m1 + 3 * m2));
+	a = - 3 * g * (m1 / 2 + m2) / (l * (m1 + 3 * m2));
 	qf = 3 / (pow(l,2) * (m1 + 3 * m2));
 	T = 0.01; // s
 	constexpr double PI = 3.14159265358979323846;
@@ -97,11 +104,11 @@ int main() {
 	H << 1, 0;
 	MatrixXd Q(2, 2);
 	Q << 0.000006121163394e-3, 0.000918045963364e-3, 0.000918045963364e-3, 0.183609197172119e-3;
-	MatrixXd R(2, 2);
-	R << sigma, 0, 0, sigma;
+	MatrixXd R(1, 1);
+	R << sigma;
 	MatrixXd P(2, 2);
-	P << 0.5, 0, 0, 0.5;
-	MatrixXd filtered_data = kalmanFilter(data, A, H, Q, R, P);
+	P << 1, 0, 0, 1;
+	MatrixXd filtered_data = kalmanFilter(data, xinit, A, H, Q, R, P);
 	writeData(filtered_data, "filtered_data.csv");
 	return 0;
 }
