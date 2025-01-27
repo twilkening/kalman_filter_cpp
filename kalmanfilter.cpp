@@ -83,7 +83,7 @@ MatrixXd kalmanFilter(MatrixXd data, MatrixXd xinit, MatrixXd A, MatrixXd H, Mat
 }
 
 int main() {
-	MatrixXd data = readData("theta_dtheta_rand.csv");
+	MatrixXd data = readData("data/theta_dtheta_rand.csv");
 	MatrixXd xinit(1, 2);
 	xinit << 0.15960189, -0.04277428;
 	double g, l, m1, m2, a, qf, T, sigma;
@@ -107,9 +107,9 @@ int main() {
 	MatrixXd R(1, 1);
 	R << sigma;
 	MatrixXd P(2, 2);
-	P << 1, 0, 0, 1;
+	P << 1, 0, 0, 1; // initial covariance guess
 	MatrixXd filtered_data = kalmanFilter(data, xinit, A, H, Q, R, P);
-	writeData(filtered_data, "filtered_data.csv");
+	writeData(filtered_data, "data/filtered_data.csv");
 	return 0;
 }
 
