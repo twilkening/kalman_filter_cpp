@@ -25,13 +25,22 @@ MatrixXd readData(string filename) {
     vector<vector<double>> data;
     string line;
     while (getline(file, line)) {
+        // Ignore comments after double backslashes
+        size_t comment_pos = line.find("//");
+        if (comment_pos != string::npos) {
+            line = line.substr(0, comment_pos);
+        }
         stringstream ss(line);
         vector<double> row;
         string cell;
         while (getline(ss, cell, ',')) {
-            row.push_back(stod(cell));
+            if (!cell.empty()) {
+                row.push_back(stod(cell));
+            }
         }
-        data.push_back(row);
+        if (!row.empty()) {
+            data.push_back(row);
+        }
     }
     MatrixXd data_matrix(data.size(), data[0].size());
     for (int i = 0; i < data.size(); i++) {
@@ -58,7 +67,7 @@ void writeData(MatrixXd data, string filename) {
 
 // Function to implement the Kalman Filter algorithm
 MatrixXd kalmanFilter(MatrixXd data, MatrixXd xinit, MatrixXd A, MatrixXd H, MatrixXd Q, MatrixXd R, MatrixXd P) {
-	MatrixXd x(data.rows(), data.cols());
+	MatrixXd x(data.rows(), xinit.cols());
 	MatrixXd I = MatrixXd::Identity(A.rows(), A.cols());
 	for (int i = 0; i < data.rows(); i++) {
 		if (i == 0) {
@@ -84,30 +93,12 @@ MatrixXd kalmanFilter(MatrixXd data, MatrixXd xinit, MatrixXd A, MatrixXd H, Mat
 
 int main() {
 	MatrixXd data = readData("data/theta_dtheta_rand.csv");
-	MatrixXd xinit(1, 2);
-	xinit << 0.15960189, -0.04277428;
-	double g, l, m1, m2, a, qf, T, sigma;
-	g = 9.81; // m/s^2
-	l = 1; // m
-	m1 = 1; // kg
-	m2 = 2; // kg
-	a = - 3 * g * (m1 / 2 + m2) / (l * (m1 + 3 * m2));
-	qf = 3 / (pow(l,2) * (m1 + 3 * m2));
-	T = 0.01; // s
-	constexpr double PI = 3.14159265358979323846;
-    sigma = PI / 18.0 / 5.0;
-	MatrixXd A(2, 2);
-	A << 0, 1, a, 0;
-	MatrixXd F(2, 2);
-	F << A.exp();
-	MatrixXd H(1, 2);
-	H << 1, 0;
-	MatrixXd Q(2, 2);
-	Q << 0.000006121163394e-3, 0.000918045963364e-3, 0.000918045963364e-3, 0.183609197172119e-3;
-	MatrixXd R(1, 1);
-	R << sigma;
-	MatrixXd P(2, 2);
-	P << 1, 0, 0, 1; // initial covariance guess
+	MatrixXd xinit = readData("data/xinit.csv");
+	MatrixXd A = readData("data/A.csv");
+	MatrixXd H = readData("data/H.csv");
+	MatrixXd Q = readData("data/Q.csv");
+	MatrixXd R = readData("data/R.csv");
+	MatrixXd P = readData("data/P.csv");
 	MatrixXd filtered_data = kalmanFilter(data, xinit, A, H, Q, R, P);
 	writeData(filtered_data, "data/filtered_data.csv");
 	return 0;
