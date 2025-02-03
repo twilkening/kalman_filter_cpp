@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # MATLAB extraneous files
 *.asv
 *.csv
+slprj/

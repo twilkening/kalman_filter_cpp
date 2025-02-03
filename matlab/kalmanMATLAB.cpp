@@ -1,3 +1,5 @@
+// NOTE: does not compile in MATLAB. abandoned code
+
 #include "mex.h"
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
